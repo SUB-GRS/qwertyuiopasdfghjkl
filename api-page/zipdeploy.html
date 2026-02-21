@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Surge Deploy — Dinzo APIs</title>
+  <link rel="icon" href="/src/icon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+  <style>
+    :root {
+      --white:#ffffff;--bg:#f7f6f3;--bg2:#eeece7;
+      --ink:#0f0e0d;--ink2:#3a3835;--ink3:#7d7a75;--ink4:#b5b2ac;
+      --rule:rgba(0,0,0,0.08);--rule2:rgba(0,0,0,0.05);
+      --orange:#FF8A29;--orange-lt:#fff7ed;--orange-md:#ffedd5;
+      --green:#059669;--green-lt:#ecfdf5;
+      --red:#dc2626;--red-lt:#fef2f2;
+      --radius:14px;--radsm:9px;--radxs:6px;
+      --sha:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04);
+      --sha2:0 2px 8px rgba(0,0,0,0.06),0 12px 40px rgba(0,0,0,0.08);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{font-size:15px;scroll-behavior:smooth;}
+    body{background:var(--bg);color:var(--ink2);font-family:'Outfit',sans-serif;line-height:1.65;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+    a{text-decoration:none;color:inherit;}
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:var(--ink4);border-radius:99px;}
+
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");background-size:180px 180px;pointer-events:none;z-index:0;opacity:0.5;}
+
+    /* ORANGE SWEEP */
+    #curtain{position:fixed;inset:0;z-index:8888;pointer-events:none;overflow:hidden;background:linear-gradient(135deg,#FF8A29 0%,#FFAD5C 55%,#FFD09A 100%);clip-path:inset(0 0 0 100%);transition:clip-path 0.7s cubic-bezier(0.76,0,0.24,1);}
+    #curtain::after{content:'Dinzo';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:clamp(36px,8vw,64px);font-style:italic;letter-spacing:-2px;color:rgba(255,255,255,0.92);opacity:0;transform:translateY(8px);transition:opacity 0.3s ease 0.25s,transform 0.3s ease 0.25s;}
+    #curtain.in{clip-path:inset(0 0 0 0%);}
+    #curtain.in::after{opacity:1;transform:translateY(0);}
+    #curtain.out{clip-path:inset(0 100% 0 0);transition:clip-path 0.65s cubic-bezier(0.76,0,0.24,1) 0.04s;}
+
+    /* HEADER */
+    header{position:sticky;top:0;z-index:50;background:rgba(247,246,243,0.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--rule);}
+    .hdr{max-width:760px;margin:0 auto;padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;}
+    .hdr-left{display:flex;align-items:center;gap:14px;}
+    .hdr-back{display:flex;align-items:center;gap:6px;font-family:'Geist Mono',monospace;font-size:11px;color:var(--ink4);transition:color 0.2s;}
+    .hdr-back:hover{color:var(--ink);}
+    .hdr-back .material-icons{font-size:15px;}
+    .hdr-sep{width:1px;height:18px;background:var(--rule);}
+    .hdr-title{font-family:'Instrument Serif',serif;font-size:18px;letter-spacing:-0.5px;color:var(--ink);display:flex;align-items:center;gap:10px;}
+    .orange-dot{width:7px;height:7px;border-radius:50%;background:var(--orange);animation:glow 2.5s ease infinite;}
+    @keyframes glow{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,138,41,0.4);}50%{opacity:0.7;box-shadow:0 0 0 6px rgba(255,138,41,0);}}
+    .badge-ver{font-family:'Geist Mono',monospace;font-size:10.5px;color:var(--ink4);background:var(--white);border:1px solid var(--rule);border-radius:var(--radxs);padding:3px 9px;}
+
+    /* MAIN */
+    main{max-width:680px;margin:0 auto;padding:52px 32px 80px;position:relative;z-index:1;}
+
+    /* HERO */
+    .hero{margin-bottom:40px;}
+    .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--orange);background:var(--orange-lt);border:1px solid rgba(255,138,41,0.2);border-radius:99px;padding:5px 14px;margin-bottom:18px;}
+    .hero-eyebrow .material-icons{font-size:13px;}
+    .hero h1{font-family:'Instrument Serif',serif;font-size:clamp(30px,5vw,42px);letter-spacing:-1.5px;color:var(--ink);line-height:1.15;margin-bottom:14px;}
+    .hero h1 em{font-style:italic;color:var(--orange);}
+    .hero-p{font-size:14.5px;color:var(--ink3);max-width:480px;line-height:1.65;}
+
+    /* HOW IT WORKS */
+    .how-steps{display:flex;gap:0;margin-bottom:36px;background:var(--white);border:1px solid var(--rule);border-radius:var(--radius);overflow:hidden;box-shadow:var(--sha);}
+    .how-step{flex:1;padding:18px 16px;border-right:1px solid var(--rule);text-align:center;position:relative;}
+    .how-step:last-child{border-right:none;}
+    .how-num{font-family:'Geist Mono',monospace;font-size:10px;color:var(--orange);font-weight:600;margin-bottom:6px;}
+    .how-label{font-size:12px;font-weight:600;color:var(--ink);}
+    .how-desc{font-size:11px;color:var(--ink3);margin-top:2px;}
+
+    /* CARD */
+    .card{background:var(--white);border:1px solid var(--rule);border-radius:var(--radius);padding:26px;margin-bottom:14px;box-shadow:var(--sha);transition:border-color 0.2s;}
+    .card:hover{border-color:rgba(0,0,0,0.12);}
+    .card-head{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+    .card-step{width:24px;height:24px;border-radius:50%;background:var(--orange);color:white;font-family:'Geist Mono',monospace;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .card-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-0.2px;}
+    .card-sub{font-size:11px;color:var(--ink3);margin-top:1px;}
+
+    /* DROPZONE */
+    #dropZone{border:2px dashed var(--rule);border-radius:var(--radsm);padding:36px 20px;text-align:center;cursor:pointer;transition:all 0.25s;position:relative;background:var(--bg);}
+    #dropZone:hover,#dropZone.drag-over{border-color:var(--orange);background:var(--orange-lt);}
+    #dropZone.has-file{border-color:var(--green);background:var(--green-lt);}
+    #dropZone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .dz-icon{font-size:32px;margin-bottom:10px;display:block;transition:transform 0.3s;}
+    #dropZone:hover .dz-icon,#dropZone.drag-over .dz-icon{transform:translateY(-4px);}
+    .dz-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+    .dz-sub{font-size:12px;color:var(--ink3);}
+    .dz-badge{display:inline-block;margin-top:10px;font-family:'Geist Mono',monospace;font-size:10px;color:var(--orange);background:var(--orange-lt);border:1px solid rgba(255,138,41,0.2);border-radius:99px;padding:3px 10px;}
+
+    .file-preview{display:none;align-items:center;gap:12px;background:var(--green-lt);border:1px solid rgba(5,150,105,0.2);border-radius:var(--radsm);padding:12px 14px;margin-top:12px;}
+    .file-preview.show{display:flex;}
+    .fp-icon{font-size:20px;flex-shrink:0;}
+    .fp-name{font-family:'Geist Mono',monospace;font-size:12px;font-weight:600;color:var(--green);}
+    .fp-size{font-family:'Geist Mono',monospace;font-size:11px;color:var(--ink3);margin-top:2px;}
+    .fp-remove{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--ink3);display:flex;align-items:center;transition:color 0.2s;}
+    .fp-remove:hover{color:var(--red);}
+
+    /* INPUTS */
+    .field{margin-bottom:14px;}
+    .field:last-child{margin-bottom:0;}
+    .flabel{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;display:flex;align-items:center;gap:4px;}
+    .req{color:var(--red);}
+    .input-row{display:flex;align-items:center;background:var(--bg);border:1px solid var(--rule);border-radius:var(--radsm);overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;}
+    .input-row:focus-within{border-color:rgba(255,138,41,0.4);box-shadow:0 0 0 3px rgba(255,138,41,0.08);}
+    .input-pfx,.input-sfx{padding:0 12px;font-family:'Geist Mono',monospace;font-size:11px;color:var(--ink4);background:var(--bg2);height:42px;display:flex;align-items:center;flex-shrink:0;white-space:nowrap;}
+    .input-pfx{border-right:1px solid var(--rule);}
+    .input-sfx{border-left:1px solid var(--rule);}
+    .input-row input{flex:1;height:42px;background:none;border:none;outline:none;color:var(--ink);font-family:'Geist Mono',monospace;font-size:12.5px;padding:0 12px;}
+    .input-row input::placeholder{color:var(--ink4);}
+
+    .hint{display:flex;align-items:flex-start;gap:8px;background:var(--orange-lt);border:1px solid rgba(255,138,41,0.15);border-radius:var(--radsm);padding:10px 13px;font-size:12px;color:var(--ink3);margin-top:8px;line-height:1.6;}
+    .hint .material-icons{font-size:15px;color:var(--orange);flex-shrink:0;margin-top:1px;}
+    .hint code{font-family:'Geist Mono',monospace;background:rgba(255,138,41,0.12);color:var(--orange);padding:1px 5px;border-radius:4px;font-size:11px;}
+
+    /* DEPLOY BTN */
+    #deployBtn{width:100%;height:52px;background:linear-gradient(135deg,var(--orange),#FFAD5C);border:none;border-radius:var(--radsm);color:white;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);margin-top:20px;position:relative;overflow:hidden;}
+    #deployBtn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent);opacity:0;transition:opacity 0.2s;}
+    #deployBtn:hover:not(:disabled)::before{opacity:1;}
+    #deployBtn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 40px rgba(255,138,41,0.4);}
+    #deployBtn:active:not(:disabled){transform:scale(0.98);}
+    #deployBtn:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none;}
+    #deployBtn .material-icons{font-size:20px;}
+    .btn-spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;display:none;}
+    #deployBtn.loading .btn-spinner{display:block;}
+    #deployBtn.loading .btn-label{display:none;}
+    #deployBtn.loading .material-icons{display:none;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    /* PROGRESS */
+    #progressWrap{display:none;margin-top:20px;}
+    #progressWrap.show{display:block;}
+    .prog-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .prog-label{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);}
+    .prog-pct{font-family:'Geist Mono',monospace;font-size:11px;color:var(--orange);}
+    .prog-track{height:4px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-bottom:14px;}
+    .prog-fill{height:100%;background:linear-gradient(90deg,var(--orange),#FFAD5C);border-radius:99px;width:0%;transition:width 0.5s ease;}
+    .prog-log{background:var(--ink);border-radius:var(--radsm);padding:14px 16px;font-family:'Geist Mono',monospace;font-size:11px;color:#8a8a9e;max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;}
+    .log-entry{display:flex;gap:10px;line-height:1.5;}
+    .log-ts{color:rgba(255,255,255,0.15);flex-shrink:0;}
+    .log-entry.ok .log-msg{color:#22c55e;}
+    .log-entry.err .log-msg{color:#ef4444;}
+    .log-entry.info .log-msg{color:#FFAD5C;}
+
+    /* RESULT */
+    #resultBox{display:none;background:var(--green-lt);border:1px solid rgba(5,150,105,0.2);border-radius:var(--radius);padding:24px;margin-top:20px;animation:slideUp 0.4s cubic-bezier(0.22,1,0.36,1);}
+    #resultBox.show{display:block;}
+    #resultBox.is-error{background:var(--red-lt);border-color:rgba(220,38,38,0.2);}
+    .res-title{font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+    #resultBox.is-error .res-title{color:var(--red);}
+    .res-url-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .res-url{flex:1;min-width:0;background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.2);border-radius:var(--radsm);padding:10px 14px;font-family:'Geist Mono',monospace;font-size:13px;color:var(--green);word-break:break-all;}
+    .res-err-msg{font-size:13.5px;color:var(--red);line-height:1.7;}
+    .btn-sm{height:38px;padding:0 16px;border:none;border-radius:var(--radsm);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;flex-shrink:0;display:flex;align-items:center;gap:6px;}
+    .btn-copy-url{background:var(--bg2);color:var(--ink2);border:1px solid var(--rule);}
+    .btn-copy-url:hover{background:var(--bg);border-color:var(--ink4);}
+    .btn-open-url{background:var(--green);color:white;}
+    .btn-open-url:hover{background:#047857;}
+    .btn-sm .material-icons{font-size:16px;}
+    .tg-note{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--ink3);}
+    .tg-note .material-icons{font-size:15px;color:var(--green);}
+
+    /* FOOTER */
+    .foot{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid var(--rule);}
+    .foot-text{font-family:'Geist Mono',monospace;font-size:10.5px;color:var(--ink4);}
+
+    @keyframes slideUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes riseUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+    .card{animation:riseUp 0.5s cubic-bezier(0.22,1,0.36,1) both;}
+    .card:nth-child(1){animation-delay:0.05s;}
+    .card:nth-child(2){animation-delay:0.1s;}
+    .card:nth-child(3){animation-delay:0.15s;}
+
+    @media(max-width:600px){
+      main{padding:32px 16px 60px;}
+      .hdr{padding:0 16px;}
+      .how-steps{flex-direction:column;}
+      .how-step{border-right:none;border-bottom:1px solid var(--rule);}
+      .how-step:last-child{border-bottom:none;}
+      .res-url-row{flex-direction:column;}
+      .btn-sm{width:100%;justify-content:center;}
+    }
+  </style>
+</head>
+<body>
+
+<div id="curtain"></div>
+
+<header>
+  <div class="hdr">
+    <div class="hdr-left">
+      <a href="/" class="hdr-back"><span class="material-icons">arrow_back</span><span>Back</span></a>
+      <div class="hdr-sep"></div>
+      <div class="hdr-title"><span class="orange-dot"></span>GooTa Deploy</div>
+    </div>
+    <div>
+      <span class="badge-ver">Free</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow"><span class="material-icons">rocket_launch</span>Deploy to Surge.sh</div>
+    <h1>Upload ZIP,<br><em>Langsung Live</em></h1>
+    <p class="hero-p">Upload file ZIP project kamu dan kami akan deploy otomatis ke Surge.sh.</p>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-num">01</div>
+      <div class="how-label">Upload ZIP</div>
+      <div class="how-desc">Pilih file .zip project</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">02</div>
+      <div class="how-label">Set Domain</div>
+      <div class="how-desc">Opsional, atau acak</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">03</div>
+      <div class="how-label">Deploy</div>
+      <div class="how-desc">Live di Surge.sh</div>
+    </div>
+  </div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-step">1</div>
+      <div>
+        <div class="card-title">Upload File ZIP</div>
+        <div class="card-sub">Drag & drop atau klik untuk memilih</div>
+      </div>
+    </div>
+
+    <div id="dropZone">
+      <input type="file" id="fileInput" accept=".zip" />
+      <span class="dz-icon">📦</span>
+      <div class="dz-title">Taruh file ZIP di sini</div>
+      <div class="dz-sub">atau klik untuk browse</div>
+      <span class="dz-badge">Hanya .zip</span>
+    </div>
+
+    <div class="file-preview" id="filePreview">
+      <span class="fp-icon">📁</span>
+      <div>
+        <div class="fp-name" id="fpName">—</div>
+        <div class="fp-size" id="fpSize">—</div>
+      </div>
+      <button class="fp-remove" id="removeFile" title="Hapus file">
+        <span class="material-icons" style="font-size:18px;">close</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: CONFIG -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-step">2</div>
+      <div>
+        <div class="card-title">Konfigurasi Domain</div>
+        <div class="card-sub">Kosongkan untuk domain acak</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="flabel">Subdomain (opsional)</div>
+      <div class="input-row">
+        <span class="input-pfx">https://</span>
+        <input type="text" id="subdomain" placeholder="nama-sitemu" autocomplete="off" spellcheck="false" />
+        <span class="input-sfx">.surge.sh</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPLOY -->
+  <button id="deployBtn" disabled>
+    <div class="btn-spinner"></div>
+    <span class="material-icons btn-label" style="font-size:20px;">rocket_launch</span>
+    <span class="btn-label">Deploy Sekarang</span>
+  </button>
+
+  <!-- PROGRESS -->
+  <div id="progressWrap">
+    <div class="prog-head">
+      <span class="prog-label">Deploying...</span>
+      <span class="prog-pct" id="progPct">0%</span>
+    </div>
+    <div class="prog-track">
+      <div class="prog-fill" id="progFill"></div>
+    </div>
+    <div class="prog-log" id="progLog"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultBox">
+    <div class="res-title" id="resTitle">✅ &nbsp;Berhasil Di-deploy!</div>
+    <div id="resContent"></div>
+  </div>
+
+  <!-- FOOT -->
+  <div class="foot">
+    <div class="foot-text">Powered by <a href="https://surge.sh" target="_blank">Dyzen</a> · GooTa APIs &copy; <span id="yr"></span></div>
+  </div>
+</main>
+
+<script src="zipdeploy.js"></script>
+</body>
+</html>
