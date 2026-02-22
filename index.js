@@ -188,8 +188,6 @@ if (fs.existsSync(apiFolder)) {
 app.get("/", (req, res) => res.sendFile(path.join(ROOT_DIR, "api-page", "index.html")));
 app.get("/docs", (req, res) => res.sendFile(path.join(ROOT_DIR, "api-page", "docs.html")));
 app.get("/ai", (req, res) => res.sendFile(path.join(ROOT_DIR, "api-page", "ai.html")));
-app.get("/deploy", (req, res) => res.sendFile(path.join(ROOT_DIR, "api-page", "zipdeploy.html")));
-app.get("/zipdeploy.js", (req, res) => res.sendFile(path.join(ROOT_DIR, "api-page", "zipdeploy.js")));
 
 app.use((req, res) => res.status(404).sendFile(path.join(ROOT_DIR, "api-page", "404.html")));
 
