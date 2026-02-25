@@ -20,6 +20,68 @@
     { "name": "Tools" }
   ],
   "paths": {
+  "/maker/iqc": {
+  "get": {
+    "summary": "IQC (iPhone Quote Chat) Maker",
+    "description": "Membuat gambar quotes dengan tampilan estetik ala pop-up chat iPhone, lengkap dengan status bar (Jam, WiFi, Operator, dan Baterai).",
+    "tags": ["Maker"],
+    "parameters": [
+      {
+        "name": "teks",
+        "in": "query",
+        "required": true,
+        "description": "Teks quotes atau pesan yang ingin ditampilkan",
+        "schema": {
+          "type": "string",
+          "example": "Mencintai tidak harus memiliki, tapi memiliki harus mencintai."
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Gambar IQC berhasil dibuat",
+        "content": {
+          "image/png": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Parameter teks tidak diisi"
+      },
+      "500": {
+        "description": "Internal Server Error (Pastikan library iqc-canvas sudah terinstall)"
+      }
+    }
+  }
+},
+  "/stalk/telegram": {
+  "get": {
+    "summary": "Telegram Account Stalker",
+    "description": "Melihat informasi profil publik, bio, dan jumlah subscriber dari akun/channel Telegram.",
+    "tags": ["Stalk"],
+    "parameters": [
+      {
+        "name": "username",
+        "in": "query",
+        "required": true,
+        "description": "Username Telegram (contoh: durov atau @durov)",
+        "schema": {
+          "type": "string",
+          "example": "durov"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Berhasil mendapatkan data profil"
+      }
+    }
+  }
+},
   "/download/videy": {
   "get": {
     "summary": "Videy.co Downloader",
@@ -105,7 +167,7 @@
     }
   }
 },
-  "/api/search/esport-earning": {
+  "/search/esport-earning": {
   "get": {
     "summary": "Esport Team Earnings Search",
     "description": "Cari data total pendapatan dan jumlah turnamen yang pernah diikuti oleh tim esport dari esportsearnings.com.",
