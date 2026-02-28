@@ -13,9 +13,11 @@
     { "name": "AI" },
     { "name": "Anime" },
     { "name": "Downloader" },
+    { "name": "Fun" },
     { "name": "Image" },
-    { "name": "News" },
     { "name": "Maker" },
+    { "name": "News" },
+    { "name": "Search" },
     { "name": "Stalk" },
     { "name": "Tools" }
   ],
@@ -371,7 +373,7 @@
   "/search/halodoc": {
   "get": {
     "summary": "Halodoc Article Search",
-    "tags": ["Internet"],
+    "tags": ["Search"],
     "parameters": [
       { "name": "query", "in": "query", "required": true, "schema": { "type": "string", "example": "gejala vpn" } }
     ],
