@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"/>
+  <meta name="theme-color" content="#f7f6f3"/>
+  <title>GooTa AI Assistant</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    :root {
+      --white:    #ffffff;
+      --bg:       #f7f6f3;
+      --bg2:      #eeece7;
+      --ink:      #0f0e0d;
+      --ink2:     #3a3835;
+      --ink3:     #7d7a75;
+      --ink4:     #b5b2ac;
+      --rule:     rgba(0,0,0,0.08);
+      --rule2:    rgba(0,0,0,0.05);
+      --blue:     #2563eb;
+      --blue-lt:  #eff6ff;
+      --blue-md:  #dbeafe;
+      --green:    #059669;
+      --green-lt: #ecfdf5;
+      --orange:   #FF8A29;
+      --orange-lt:#fff7ed;
+      --radius:   14px;
+      --radsm:    9px;
+      --radxs:    6px;
+      --sha:      0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+      --sha2:     0 2px 8px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink2);
+      font-family: 'Outfit', sans-serif;
+      line-height: 1.65;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--ink4); border-radius: 99px; }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+      pointer-events: none; z-index: 0; opacity: 0.5;
+    }
+
+    /* ORANGE SWEEP */
+    #curtain {
+      position: fixed; inset: 0; z-index: 8888;
+      pointer-events: none; overflow: hidden;
+      background: linear-gradient(135deg, #FF8A29 0%, #FFAD5C 55%, #FFD09A 100%);
+      clip-path: inset(0 0 0 100%);
+      transition: clip-path 0.7s cubic-bezier(0.76,0,0.24,1);
+    }
+    #curtain::after {
+      content: 'GooTa';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(36px, 8vw, 64px);
+      font-style: italic;
+      letter-spacing: -2px;
+      color: rgba(255,255,255,0.92);
+      text-shadow: 0 2px 24px rgba(200,80,0,0.25);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.3s ease 0.25s, transform 0.3s ease 0.25s;
+    }
+    #curtain.in { clip-path: inset(0 0 0 0%); }
+    #curtain.in::after { opacity: 1; transform: translateY(0); }
+    #curtain.out {
+      clip-path: inset(0 100% 0 0);
+      transition: clip-path 0.65s cubic-bezier(0.76,0,0.24,1) 0.04s;
+    }
+    #curtain.out::after { opacity: 0; transform: translateY(-6px); transition: opacity 0.15s ease, transform 0.15s ease; }
+
+    /* HEADER */
+    header {
+      position: relative; z-index: 50;
+      background: rgba(247,246,243,0.92);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--rule);
+      flex-shrink: 0;
+    }
+    .hdr {
+      max-width: 800px; margin: 0 auto;
+      padding: 0 24px; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .hdr-left { display: flex; align-items: center; gap: 14px; }
+    .hdr-back {
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px; color: var(--ink4);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .hdr-back:hover { color: var(--ink); }
+    .hdr-back .material-icons { font-size: 15px; }
+    .hdr-sep { width: 1px; height: 18px; background: var(--rule); }
+    .hdr-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 18px; letter-spacing: -0.5px; color: var(--ink);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ai-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--orange);
+      animation: glow 2.5s ease infinite;
+    }
+    @keyframes glow {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,138,41,0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(255,138,41,0); }
+    }
+    .badge-ver {
+      font-family: 'Geist Mono', monospace; font-size: 10.5px;
+      color: var(--ink4); background: var(--white);
+      border: 1px solid var(--rule); border-radius: var(--radxs);
+      padding: 3px 9px;
+    }
+    .hdr-right {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .btn-clear-hist {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--radsm);
+      color: var(--ink3);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-clear-hist:hover {
+      background: var(--bg);
+      color: var(--ink);
+      border-color: var(--ink4);
+    }
+    .btn-clear-hist .material-icons {
+      font-size: 18px;
+    }
+
+    /* MAIN CHAT */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #chatBox {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 24px 0;
+    }
+
+    /* EMPTY STATE */
+    #emptyState {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      opacity: 0;
+      animation: fadeIn 0.7s ease forwards 0.2s;
+    }
+    .ai-icon-lg {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, var(--orange), #FFAD5C);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-size: 32px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(255,138,41,0.25);
+    }
+    #emptyState h2 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 28px; letter-spacing: -1px; color: var(--ink);
+      margin-bottom: 10px;
+    }
+    #emptyState p {
+      font-size: 14px; color: var(--ink3);
+      max-width: 440px; line-height: 1.6;
+    }
+
+    .starter-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 28px;
+      width: 100%;
+      max-width: 600px;
+    }
+    .starter-card {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: var(--sha);
+    }
+    .starter-card:hover {
+      border-color: rgba(255,138,41,0.3);
+      transform: translateY(-2px);
+      box-shadow: var(--sha2);
+    }
+    .starter-card-title {
+      font-size: 13px; font-weight: 600; color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .starter-card-desc {
+      font-size: 11.5px; color: var(--ink3);
+    }
+
+    /* MESSAGES */
+    .msg {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      animation: slideUp 0.35s ease;
+    }
+    .msg.user {
+      flex-direction: row-reverse;
+      align-self: flex-end;
+      max-width: 70%;
+    }
+    .msg.ai { align-self: flex-start; }
+
+    .msg-avatar {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px; font-weight: 600;
+    }
+    .msg.user .msg-avatar {
+      background: var(--ink);
+      color: var(--white);
+    }
+    .msg.ai .msg-avatar {
+      background: linear-gradient(135deg, var(--orange), #FFAD5C);
+      color: white;
+      font-size: 16px;
+    }
+
+    .msg-bubble {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      box-shadow: var(--sha);
+      position: relative;
+    }
+    .msg.user .msg-bubble {
+      background: var(--ink);
+      color: var(--white);
+      border-color: var(--ink);
+    }
+    .msg.ai .msg-bubble {
+      max-width: 100%;
+    }
+
+    /* MARKDOWN */
+    .msg-bubble p { margin-bottom: 10px; }
+    .msg-bubble p:last-child { margin-bottom: 0; }
+    .msg-bubble ul, .msg-bubble ol { margin-left: 18px; margin-bottom: 10px; }
+    .msg-bubble li { margin-bottom: 4px; }
+    .msg-bubble code {
+      font-family: 'Geist Mono', monospace;
+      font-size: 12px;
+      background: var(--bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+    }
+    .msg.user .msg-bubble code {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .msg-bubble pre {
+      background: var(--ink);
+      color: #e8eaf0;
+      padding: 12px;
+      border-radius: var(--radsm);
+      overflow-x: auto;
+      margin-bottom: 10px;
+      font-family: 'Geist Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .msg-bubble pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    /* LOADING */
+    .msg.ai.loading .msg-bubble {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding: 14px 18px;
+    }
+    .typing-dot {
+      width: 7px; height: 7px;
+      background: var(--ink4);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-8px); }
+    }
+
+    /* INPUT AREA */
+    #inputArea {
+      flex-shrink: 0;
+      padding: 16px 0 max(16px, env(safe-area-inset-bottom));
+      position: relative;
+    }
+    .input-wrap {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      box-shadow: var(--sha2);
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      padding: 10px 12px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .input-wrap:focus-within {
+      border-color: rgba(255,138,41,0.35);
+      box-shadow: var(--sha2), 0 0 0 3px rgba(255,138,41,0.08);
+    }
+
+    #userInput {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      resize: none;
+      max-height: 120px;
+      overflow-y: auto;
+      line-height: 1.5;
+      padding: 4px 0;
+    }
+    #userInput::placeholder { color: var(--ink4); }
+
+    #sendBtn {
+      width: 36px; height: 36px;
+      background: var(--orange);
+      border: none;
+      border-radius: var(--radsm);
+      color: white;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    #sendBtn:disabled {
+      background: var(--bg2);
+      color: var(--ink4);
+      cursor: not-allowed;
+    }
+    #sendBtn:not(:disabled):hover {
+      background: #e67517;
+      transform: scale(1.05);
+    }
+    #sendBtn:not(:disabled):active {
+      transform: scale(0.95);
+    }
+    #sendBtn .material-icons { font-size: 18px; }
+
+    .conv-info {
+      display: flex; align-items: center; gap: 6px;
+      justify-content: center;
+      font-family: 'Geist Mono', monospace;
+      font-size: 10.5px;
+      color: var(--ink4);
+      margin-top: 8px;
+      padding: 4px 0;
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .hdr { padding: 0 16px; }
+      main { padding: 0 16px; }
+      .hdr-back span:not(.material-icons) { display: none; }
+      .badge-ver { display: none; }
+      .msg.user { max-width: 85%; }
+      .starter-cards { grid-template-columns: 1fr; }
+    }
+
+    /* Fix keyboard floating on Android/mobile */
+    @supports (height: 100dvh) {
+      body { height: 100dvh; }
+    }
+    @supports not (height: 100dvh) {
+      body { height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="curtain"></div>
+
+<header>
+  <div class="hdr">
+    <div class="hdr-left">
+      <a href="/" class="hdr-back">
+        <span class="material-icons">arrow_back</span>
+        <span>Back</span>
+      </a>
+      <div class="hdr-sep"></div>
+      <div class="hdr-title">
+        <span class="ai-dot"></span>
+        GooTa AI Assistant
+      </div>
+    </div>
+    <div class="hdr-right">
+      <button class="btn-clear-hist" onclick="clearConversation()" title="Hapus Riwayat">
+        <span class="material-icons">delete_outline</span>
+      </button>
+      <span class="badge-ver">Beta</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="chatBox">
+    <div id="emptyState">
+      <div class="ai-icon-lg">
+        <span class="material-icons" style="font-size:36px;">smart_toy</span>
+      </div>
+      <h2>Halo! Saya GooTa AI</h2>
+      <p>
+        Asisten virtual yang siap membantu Anda memahami dan menggunakan GooTa REST API. 
+        Tanyakan apapun seputar endpoint, parameter, atau cara integrasi!
+      </p>
+
+      <div class="starter-cards">
+        <div class="starter-card" onclick="sendStarterQuestion('Bagaimana cara menggunakan endpoint download tiktok?')">
+          <div class="starter-card-title">Download TikTok</div>
+          <div class="starter-card-desc">Cara menggunakan fitur download TikTok</div>
+        </div>
+        <div class="starter-card" onclick="sendStarterQuestion('Bagaimana cara menggunakan endpoint download instagram?')">
+          <div class="starter-card-title">Download Instagram</div>
+          <div class="starter-card-desc">Cara menggunakan fitur download IG</div>
+        </div>
+        <div class="starter-card" onclick="sendStarterQuestion('Apa saja kategori API yang tersedia di GooTa?')">
+          <div class="starter-card-title">Kategori API</div>
+          <div class="starter-card-desc">Lihat semua kategori tersedia</div>
+        </div>
+        <div class="starter-card" onclick="sendStarterQuestion('Bagaimana cara mendapatkan API?')">
+          <div class="starter-card-title">API</div>
+          <div class="starter-card-desc">Cara mendapatkan akses API</div>
+        </div>
+        <div class="starter-card" onclick="sendStarterQuestion('Contoh kode integrasi untuk Node.js')">
+          <div class="starter-card-title">Integrasi Code</div>
+          <div class="starter-card-desc">Contoh implementasi praktis</div>
+        </div>
+        <div class="starter-card" onclick="sendStarterQuestion('Endpoint apa saja yang tersedia?')">
+          <div class="starter-card-title">Daftar Endpoint</div>
+          <div class="starter-card-desc">Lihat semua endpoint API</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="inputArea">
+    <div class="input-wrap">
+      <textarea id="userInput" placeholder="Tanyakan sesuatu tentang GooTa API..." rows="1"></textarea>
+      <button id="sendBtn">
+        <span class="material-icons">send</span>
+      </button>
+    </div>
+    <div class="conv-info">
+      <span class="material-icons" style="font-size:13px;">history</span>
+      <span id="msgCount">0 pesan tersimpan</span>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // FIX KEYBOARD FLOATING — Visual Viewport API for Android
+  if (window.visualViewport) {
+    function onViewportResize() {
+      document.body.style.height = window.visualViewport.height + 'px';
+    }
+    window.visualViewport.addEventListener('resize', onViewportResize);
+    window.visualViewport.addEventListener('scroll', onViewportResize);
+    onViewportResize();
+  }
+
+  /* CURTAIN */
+  var curtain = document.getElementById('curtain');
+  var busy = false;
+  function openCurtain(cb) {
+    curtain.classList.remove('out');
+    void curtain.offsetWidth;
+    curtain.classList.add('in');
+    setTimeout(cb, 750);
+  }
+  function closeCurtain() {
+    curtain.classList.remove('in');
+    void curtain.offsetWidth;
+    curtain.classList.add('out');
+    setTimeout(function(){ curtain.classList.remove('out'); }, 760);
+  }
+
+  document.querySelectorAll('a[href]').forEach(function(link){
+    var href = link.getAttribute('href');
+    if (!href || href==='#') return;
+    var ext = link.target==='_blank' || href.indexOf('http')===0 || href.indexOf('//')===0;
+    link.addEventListener('click', function(e){
+      if (busy){ e.preventDefault(); return; }
+      e.preventDefault(); busy = true;
+      openCurtain(function(){
+        if (ext){ window.open(href,'_blank'); busy=false; closeCurtain(); }
+        else { window.location.href = href; }
+      });
+    });
+  });
+
+  /* CHAT LOGIC */
+  var chatBox = document.getElementById('chatBox');
+  var emptyState = document.getElementById('emptyState');
+  var userInput = document.getElementById('userInput');
+  var sendBtn = document.getElementById('sendBtn');
+  var isFirstMessage = true;
+
+  /* CONVERSATION HISTORY STORAGE */
+  var STORAGE_KEY = 'dinzo_ai_conversations';
+  var conversationHistory = [];
+  var sessionMemory = [];
+  var MAX_SESSION_TURNS = 20;
+
+  function saveToStorage(){
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversationHistory));
+      updateCounter();
+    } catch(e){
+      console.error('Failed to save conversation:', e);
+    }
+  }
+
+  function loadFromStorage(){
+    try {
+      var stored = localStorage.getItem(STORAGE_KEY);
+      if (stored){
+        conversationHistory = JSON.parse(stored);
+        if (conversationHistory.length > 0){
+          hideEmpty();
+          conversationHistory.forEach(function(msg){
+            appendMessage(msg.text, msg.sender, true);
+          });
+        }
+      }
+    } catch(e){
+      console.error('Failed to load conversation:', e);
+      conversationHistory = [];
+    }
+    updateCounter();
+  }
+
+  function clearHistory(){
+    conversationHistory = [];
+    sessionMemory = []; // Reset ingatan sesi juga
+    localStorage.removeItem(STORAGE_KEY);
+    chatBox.innerHTML = '';
+    var empty = document.createElement('div');
+    empty.id = 'emptyState';
+    empty.innerHTML = emptyState.innerHTML;
+    chatBox.appendChild(empty);
+    isFirstMessage = true;
+    updateCounter();
+  }
+
+  function updateCounter(){
+    var countEl = document.getElementById('msgCount');
+    if (countEl){
+      var count = conversationHistory.length;
+      countEl.textContent = count + ' pesan tersimpan';
+    }
+  }
+
+  userInput.addEventListener('input', function(){
+    this.style.height = 'auto';
+    this.style.height = this.scrollHeight + 'px';
+  });
+
+  function scrollToBottom(){
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function hideEmpty(){
+    if (isFirstMessage){
+      var emptyEl = document.getElementById('emptyState');
+      if (emptyEl) emptyEl.style.display = 'none';
+      isFirstMessage = false;
+    }
+  }
+
+  function appendMessage(text, sender, skipSave){
+    hideEmpty();
+    var msg = document.createElement('div');
+    msg.className = 'msg ' + sender;
+
+    var avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    if (sender === 'user'){
+      avatar.textContent = 'U';
+    } else {
+      avatar.innerHTML = '<span class="material-icons" style="font-size:16px;">smart_toy</span>';
+    }
+
+    var bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+
+    if (sender === 'user'){
+      bubble.textContent = text;
+      msg.appendChild(bubble);
+      msg.appendChild(avatar);
+    } else {
+      msg.appendChild(avatar);
+      msg.appendChild(bubble);
+      if (text === '...loading'){
+        msg.classList.add('loading');
+        bubble.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+      } else {
+        bubble.innerHTML = marked.parse(text);
+        bubble.querySelectorAll('pre code').forEach(function(block){
+          if (window.hljs) hljs.highlightElement(block);
+        });
+      }
+    }
+
+    chatBox.appendChild(msg);
+    scrollToBottom();
+
+    if (!skipSave && text !== '...loading'){
+      conversationHistory.push({ text: text, sender: sender, timestamp: Date.now() });
+      saveToStorage();
+    }
+
+    return msg;
+  }
+
+  function removeMessage(el){
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
+
+  async function sendMessage(query) {
+    if (!query.trim()) return;
+
+    appendMessage(query, 'user');
+    // Simpan pesan user ke sessionMemory (ingatan sesi)
+    sessionMemory.push({ role: 'user', content: query });
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    userInput.disabled = true;
+    sendBtn.disabled = true;
+
+    var loadingMsg = appendMessage('...loading', 'ai');
+
+    try {
+      // 🔥 FIX: PAKAI ENDPOINT YANG BENAR
+      const baseUrl = 'https://goota.my.id/ai/copilot';
+      
+      // Gabungkan system prompt dengan query user
+      var systemPrompt = `Kamu adalah AI Assistant bernama "GooTa AI", asisten virtual yang membantu pengguna memahami dan menggunakan **GooTa REST API**.
+
+**INFORMASI PENTING:**
+- Base URL: https://goota.my.id
+- Semua endpoint bisa di gunakan tanpa key
+
+**TUGAS UTAMA:**
+Fokus hanya menjawab pertanyaan seputar REST API GooTa, termasuk:
+- Cara menggunakan endpoint (download TikTok, Instagram, YouTube, Facebook, Twitter, dll.)
+- Parameter yang dibutuhkan (url, api)
+- Contoh request dan response
+- Cara integrasi dengan berbagai bahasa pemrograman
+- Cara mendapatkan API
+- Daftar endpoint yang tersedia
+- Api bersifat publik jadi ga pakai key buat api
+- api bebas akses semua orang 
+- melindungi nama baik GooTa
+- menjadi teman ngobrol yang humoris dan asik
+- ajarkan orang yang tidak bisa menggunakan api,agar dia bisa menggunakan nya
+- topik tentang api,bot wa, website,dan coding lain nya 
+
+**ATURAN:**
+1. Jadi lah customer service yang ramah dan humoris 
+2. Jawab dengan jelas, ringkas, dan berikan contoh kode
+3. Gunakan format markdown untuk code examples
+4. Kamu di ciptakan oleh dyzen
+
+**CONTOH ENDPOINT:**
+- Download TikTok: /download/tiktok?url={url}
+- Download Instagram: /download/instagram?url={url}
+- Download YouTube: /download/ytmp4?url={url}
+
+Sekarang jawab pertanyaan user berikut:`;
+
+      // Bangun konteks percakapan dari sessionMemory
+      var contextBlock = '';
+      if (sessionMemory.length > 0) {
+        // Ambil MAX_SESSION_TURNS * 2 pesan terakhir agar tidak terlalu panjang
+        var recentMemory = sessionMemory.slice(-(MAX_SESSION_TURNS * 2));
+        contextBlock = '\n\n--- RIWAYAT PERCAKAPAN SEBELUMNYA (jangan sebut ini ke user) ---\n';
+        recentMemory.forEach(function(m) {
+          contextBlock += (m.role === 'user' ? 'User' : 'GooTa AI') + ': ' + m.content + '\n';
+        });
+        contextBlock += '--- AKHIR RIWAYAT ---';
+      }
+
+      var fullPrompt = systemPrompt + contextBlock + '\n\nUser: ' + query;
+      
+      // Encode prompt untuk URL
+      const encodedPrompt = encodeURIComponent(fullPrompt);
+      const url = `${baseUrl}?message=${encodedPrompt}&model=default`;
+      
+      console.log('Mengirim request ke:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // 🔥 FIX: BACA RESPONSE JSON DENGAN STRUKTUR YANG BENAR
+      const data = await response.json();
+      console.log('Response dari server:', data);
+
+      // STRUKTUR RESPONSE: { status: true, creator: "Rynn UI", result: { text: "...", citations: [] } }
+      let answer = '';
+      
+      if (data.status === true && data.result && data.result.text) {
+        // Format yang benar
+        answer = data.result.text;
+      } else if (data.result && typeof data.result === 'string') {
+        // Format alternatif
+        answer = data.result;
+      } else if (data.message) {
+        answer = data.message;
+      } else if (data.text) {
+        answer = data.text;
+      } else {
+        // Fallback: tampilkan JSON untuk debugging
+        answer = '⚠️ Format response tidak dikenal:\n\n```json\n' + JSON.stringify(data, null, 2) + '\n```';
+      }
+
+      // Validasi jawaban
+      if (!answer || answer.trim() === '') {
+        answer = '⚠️ Maaf, server mengembalikan response kosong.';
+      }
+
+      removeMessage(loadingMsg);
+      appendMessage(answer, 'ai');
+      // Simpan jawaban AI ke sessionMemory (ingatan sesi)
+      sessionMemory.push({ role: 'ai', content: answer });
+
+    } catch (err) {
+      removeMessage(loadingMsg);
+      console.error('Error detail:', err);
+      
+      let errorMessage = '❌ **Gagal terhubung ke server**\n\n';
+      errorMessage += '**Error:** ' + err.message + '\n\n';
+      errorMessage += 'Coba buka link ini di browser untuk test:\n';
+      errorMessage += 'https://goota.my.id/ai/copilot?message=halo&model=default';
+      
+      appendMessage(errorMessage, 'ai');
+      
+    } finally {
+      userInput.disabled = false;
+      sendBtn.disabled = false;
+      userInput.focus();
+    }
+  }
+
+  // EVENT LISTENERS
+  sendBtn.addEventListener('click', function(){ sendMessage(userInput.value); });
+  
+  userInput.addEventListener('keypress', function(e){
+    if (e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      sendMessage(userInput.value);
+    }
+  });
+
+  // GLOBAL FUNCTIONS
+  window.sendStarterQuestion = function(q){
+    userInput.value = q;
+    sendMessage(q);
+  };
+
+  window.clearConversation = function(){
+    if (confirm('Hapus semua riwayat percakapan?')){
+      clearHistory();
+    }
+  };
+
+  // LOAD HISTORY
+  loadFromStorage();
+
+}());
+
+</script>
+
+</body>
+</html>
