@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "qwerty.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "src/**, gootaaaaa/**"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "qwerty.js"
+    }
+  ]
+}
